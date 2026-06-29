@@ -1,0 +1,245 @@
+<%- include('../partials/head', { title: t('servers_title'), active: 'servers' }) %>
+
+<div class="page-head">
+  <h1>⛁ <%= t('servers_title') %></h1>
+  <div class="spacer"></div>
+  <button class="btn" onclick="openServerNew()">
+    + <%= t('new_server') %>
+  </button>
+</div>
+
+<div class="card">
+  <% if (!servers.length) { %>
+    <div class="empty-state">
+      <div class="icon">🖥️</div>
+      <div class="title"><%= t('no_servers') %></div>
+      <div class="description"><%= t('no_servers_desc') || t('add_a_3xui_server') %></div>
+      <button class="btn" onclick="openServerNew()">
+        <%= t('add_server') || t('new_server') %>
+      </button>
+    </div>
+  <% } else { %>
+    <div class="flex-between" style="margin-bottom: 16px;">
+      <div class="muted" style="font-size: 0.9rem;">
+        <%= servers.length %> <%= t('servers') %>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th><%= t('col_name') %></th>
+            <th><%= t('col_url') %></th>
+            <th><%= t('col_style') %></th>
+            <th><%= t('col_status') %></th>
+            <th style="text-align: center;"><%= t('col_actions') %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% servers.forEach(function(s){ %>
+            <tr>
+              <td>
+                <strong><%= s.name %></strong>
+              </td>
+              <td>
+                <code class="muted" style="font-size: 0.8rem;">
+                  <%= s.base_url.substring(0, 40) %><%if (s.base_url.length > 40) { %>…<% } %>
+                </code>
+              </td>
+              <td>
+                <span class="badge muted">
+                  <%= s.api_style === 'auto' ? '🔍 ' : '' %><%= s.api_style %>
+                </span>
+              </td>
+              <td>
+                <span class="badge <%= s.enabled ? 'green' : 'muted' %>">
+                  <%= s.enabled ? '✓ ' + t('enabled') : '✕ ' + t('disabled') %>
+                </span>
+              </td>
+              <td class="actions" style="text-align: center;">
+                <div class="btn-group gap-sm" style="justify-content: center;">
+                  <button
+                    class="btn sm ghost"
+                    onclick="openServerEdit(<%= s.id %>)"
+                    title="<%= t('edit') %>"
+                  >
+                    <%= t('edit') %>
+                  </button>
+                  <form
+                    method="post"
+                    action="/admin/servers/<%= s.id %>/delete"
+                    style="margin:0; display: inline;"
+                    data-confirm="<%= t('confirm_delete_server') %>"
+                  >
+                    <input type="hidden" name="_csrf" value="<%= csrf %>">
+                    <button class="btn sm danger" type="submit">
+                      <%= t('delete') %>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<!-- Server Create/Edit Modal -->
+<div class="modal-back" id="serverModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="serverModalTitle">🖥️ <%= t('new_server') %></h2>
+      <button class="close-x" onclick="closeModal('serverModal')" type="button">×</button>
+    </div>
+
+    <form method="post" id="serverForm" data-server-id="">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+
+      <div class="modal-body">
+        <!-- Basic Info -->
+        <div class="form-group">
+          <label for="serverName"><%= t('server_name') %></label>
+          <input
+            id="serverName"
+            type="text"
+            name="name"
+            required
+            placeholder="<%= t('example') %>: Edge Server 1"
+          >
+        </div>
+
+        <!-- Base URL -->
+        <div class="form-group">
+          <label for="serverBaseUrl"><%= t('base_url') %></label>
+          <input
+            id="serverBaseUrl"
+            type="text"
+            name="base_url"
+            placeholder="https://host:6985/path"
+            required
+          >
+          <div class="hint"><%= t('base_url_hint') %></div>
+        </div>
+
+        <!-- API Token -->
+        <div class="form-group">
+          <label for="serverApiToken"><%= t('api_token') %></label>
+          <input
+            id="serverApiToken"
+            type="password"
+            name="api_token"
+            placeholder="••••••••"
+            autocomplete="off"
+          >
+          <div class="hint"><%= t('api_token_hint') %></div>
+        </div>
+
+        <!-- Subscription Base URL -->
+        <div class="form-group">
+          <label for="serverSubBaseUrl"><%= t('sub_base_url') %></label>
+          <input
+            id="serverSubBaseUrl"
+            type="text"
+            name="sub_base_url"
+            placeholder="https://host:2096/sub"
+          >
+          <div class="hint"><%= t('sub_base_url_hint') %></div>
+        </div>
+
+        <!-- API Style & Status -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="serverApiStyle"><%= t('api_style') %></label>
+            <select id="serverApiStyle" name="api_style">
+              <option value="auto">🔍 <%= t('style_auto') %></option>
+              <option value="classic">📦 <%= t('style_classic') %></option>
+              <option value="new">✨ <%= t('style_new') %></option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox" style="margin-top: 28px;">
+              <input type="checkbox" name="enabled" id="serverEnabled" checked>
+              <%= t('enabled') %>
+            </label>
+          </div>
+        </div>
+
+        <!-- Advanced Options -->
+        <details class="mt-2">
+          <summary style="cursor: pointer; color: var(--muted); font-weight: 600;">
+            🔐 <%= t('server_auth_hint') %>
+          </summary>
+          <div class="form-row mt">
+            <div class="form-group">
+              <label for="serverUsername"><%= t('server_username') %></label>
+              <input
+                id="serverUsername"
+                type="text"
+                name="username"
+                placeholder="<%= t('optional') %>"
+                autocomplete="off"
+              >
+            </div>
+            <div class="form-group">
+              <label for="serverPassword"><%= t('server_password') %></label>
+              <input
+                id="serverPassword"
+                type="password"
+                name="password"
+                placeholder="••••••••"
+                autocomplete="off"
+              >
+            </div>
+          </div>
+        </details>
+
+        <!-- Test Result -->
+        <div id="testResult" class="mt-2"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn ghost" type="button" onclick="testConnection(this)">
+          🧪 <%= t('test_connection') %>
+        </button>
+        <div class="spacer"></div>
+        <button class="btn ghost" type="button" onclick="closeModal('serverModal')">
+          <%= t('cancel') %>
+        </button>
+        <button class="btn" type="submit">
+          💾 <%= t('save') %>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  var SERVERS = <%- JSON.stringify(servers.map(function(s){ return { id:s.id, name:s.name, base_url:s.base_url, sub_base_url:s.sub_base_url, api_style:s.api_style, username:s.username, enabled:!!s.enabled }; })) %>;
+  function setField(name, value){ var el = document.querySelector('#serverForm [name="'+name+'"]'); if(el) el.value = value || ''; }
+  function openServerNew(){
+    var f = document.getElementById('serverForm');
+    f.reset(); f.action = '/admin/servers'; f.dataset.serverId = '';
+    document.getElementById('serverModalTitle').textContent = '<%= t('new_server') %>';
+    document.getElementById('serverEnabled').checked = true;
+    document.getElementById('testResult').innerHTML = '';
+    openModal('serverModal');
+  }
+  function openServerEdit(id){
+    var s = SERVERS.find(function(x){ return x.id === id; });
+    if(!s) return;
+    var f = document.getElementById('serverForm');
+    f.reset(); f.action = '/admin/servers/' + id + '/update'; f.dataset.serverId = id;
+    document.getElementById('serverModalTitle').textContent = s.name;
+    setField('name', s.name); setField('base_url', s.base_url); setField('sub_base_url', s.sub_base_url);
+    setField('api_style', s.api_style); setField('username', s.username);
+    document.getElementById('serverEnabled').checked = !!s.enabled;
+    document.getElementById('testResult').innerHTML = '';
+    openModal('serverModal');
+  }
+</script>
+
+<%- include('../partials/foot') %>

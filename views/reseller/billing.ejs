@@ -1,0 +1,53 @@
+<%- include('../partials/head', { title: t('billing_title') }) %>
+
+<% function statusBadge(s){ return s==='settled'?'green':(s==='cancelled'?'muted':'yellow'); } %>
+<% function actionLabel(a){ return a==='create'?t('action_create'):(a==='renew'?t('action_renew'):t('action_delete')); } %>
+
+<div class="page-head"><h1><%= t('billing_title') %></h1></div>
+<p class="subtitle"><%= t('bill_reseller_hint') %></p>
+
+<div class="card">
+  <div class="muted mt" style="margin-top:0;margin-bottom:14px"><%= t('total_pending') %>: <strong><%= Number(pendingTotal).toLocaleString() %></strong></div>
+  <% if (!rows.length) { %>
+    <p class="muted"><%= t('no_bill') %></p>
+  <% } else { %>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th><%= t('col_date') %></th><th><%= t('col_action') %></th><th><%= t('col_server') %></th>
+        <th><%= t('col_client') %></th><th><%= t('col_price') %></th><th><%= t('col_status') %></th><th><%= t('col_actions') %></th>
+      </tr></thead>
+      <tbody>
+      <% rows.forEach(function(b){ %>
+        <tr>
+          <td class="muted nowrap"><%= fmt.formatDateTime(b.created_at) %></td>
+          <td><span class="badge muted"><%= actionLabel(b.action) %></span></td>
+          <td class="muted"><%= b.server_name || '—' %> <span class="mono">#<%= b.inbound_id %></span></td>
+          <td class="mono"><%= b.client_email %></td>
+          <td class="nowrap"><%= b.price %> <span class="muted"><%= b.currency %></span></td>
+          <td><span class="badge <%= statusBadge(b.status) %>"><%= t('status_'+b.status) %></span></td>
+          <td class="actions">
+            <div class="btn-group">
+              <% if (b.status !== 'settled') { %>
+              <form method="post" action="/reseller/billing/<%= b.id %>/status" style="margin:0">
+                <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="status" value="settled">
+                <button class="btn sm success" type="submit"><%= t('mark_settled') %></button>
+              </form>
+              <% } %>
+              <% if (b.status === 'pending') { %>
+              <form method="post" action="/reseller/billing/<%= b.id %>/status" style="margin:0">
+                <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="status" value="cancelled">
+                <button class="btn sm ghost" type="submit"><%= t('mark_cancelled') %></button>
+              </form>
+              <% } %>
+            </div>
+          </td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+
+<%- include('../partials/foot') %>

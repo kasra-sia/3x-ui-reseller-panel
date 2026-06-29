@@ -1,0 +1,109 @@
+<%- include('../partials/head', { title: t('plans_title') }) %>
+
+<div class="page-head">
+  <a class="btn ghost sm" href="/admin/resellers">← <%= t('nav_resellers') %></a>
+  <h1><%= t('plans_for', { name: reseller.username }) %></h1>
+  <div class="spacer"></div>
+  <button class="btn" onclick="openPlanNew()">+ <%= t('add_plan') %></button>
+</div>
+<p class="subtitle"><%= t('plans_hint') %></p>
+
+<div class="card">
+  <% if (!plans.length) { %>
+    <p class="muted"><%= t('no_plans') %></p>
+  <% } else { %>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th><%= t('plan_name') %></th><th><%= t('plan_duration') %></th><th><%= t('plan_traffic') %></th>
+        <th><%= t('plan_price') %></th><th><%= t('col_status') %></th><th><%= t('col_actions') %></th>
+      </tr></thead>
+      <tbody>
+      <% plans.forEach(function(p){ %>
+        <tr>
+          <td><strong><%= p.name %></strong></td>
+          <td><%= p.days > 0 ? t('days_n', { n: p.days }) : t('no_expiry') %></td>
+          <td><%= p.traffic_gb > 0 ? (p.traffic_gb + ' GB') : t('unlimited') %></td>
+          <td class="nowrap"><%= Number(p.price).toLocaleString() %> <span class="muted"><%= p.currency %></span></td>
+          <td><span class="badge <%= p.enabled ? 'green':'muted' %>"><%= p.enabled ? t('enabled') : t('disabled') %></span></td>
+          <td class="actions">
+            <div class="btn-group">
+              <button class="btn sm ghost" onclick='openPlanEdit(<%- JSON.stringify(p) %>)'><%= t('edit') %></button>
+              <form method="post" action="/admin/resellers/<%= reseller.id %>/plans/<%= p.id %>/delete" style="margin:0" data-confirm="<%= t('confirm_delete_plan') %>">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <button class="btn sm danger" type="submit"><%= t('delete') %></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+
+<!-- Plan create/edit modal -->
+<div class="modal-back" id="planModal">
+  <div class="modal">
+    <div class="modal-head"><h2 id="planModalTitle"><%= t('add_plan') %></h2><button class="close-x" onclick="closeModal('planModal')">×</button></div>
+    <form method="post" id="planForm">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label><%= t('plan_name') %></label>
+      <input type="text" name="name" id="planName" required placeholder="<%= t('plan_name_ph') %>">
+      <div class="form-row">
+        <div>
+          <label><%= t('plan_duration') %></label>
+          <input type="number" name="days" id="planDays" min="0" step="1" value="30">
+          <div class="hint"><%= t('expiry_days_hint') %></div>
+        </div>
+        <div>
+          <label><%= t('plan_traffic') %></label>
+          <input type="number" name="traffic_gb" id="planTraffic" min="0" step="0.1" value="15">
+          <div class="hint"><%= t('traffic_gb_hint') %></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label><%= t('plan_price') %></label>
+          <input type="number" name="price" id="planPrice" min="0" step="1" value="0">
+        </div>
+        <div>
+          <label><%= t('currency') %></label>
+          <input type="text" name="currency" id="planCurrency" maxlength="12" value="تومان">
+        </div>
+      </div>
+      <label class="checkbox mt"><input type="checkbox" name="enabled" id="planEnabled" checked> <%= t('plan_enabled') %></label>
+      <div class="flex mt">
+        <button class="btn" type="submit"><%= t('save') %></button>
+        <button class="btn ghost" type="button" onclick="closeModal('planModal')"><%= t('cancel') %></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  var BASE = '/admin/resellers/<%= reseller.id %>';
+  function openPlanNew(){
+    var f = document.getElementById('planForm');
+    f.reset(); f.action = BASE + '/plans';
+    document.getElementById('planModalTitle').textContent = '<%= t('add_plan') %>';
+    document.getElementById('planEnabled').checked = true;
+    document.getElementById('planCurrency').value = 'تومان';
+    openModal('planModal');
+  }
+  function openPlanEdit(p){
+    var f = document.getElementById('planForm');
+    f.reset(); f.action = BASE + '/plans/' + p.id + '/update';
+    document.getElementById('planModalTitle').textContent = p.name;
+    document.getElementById('planName').value = p.name;
+    document.getElementById('planDays').value = p.days;
+    document.getElementById('planTraffic').value = p.traffic_gb;
+    document.getElementById('planPrice').value = p.price;
+    document.getElementById('planCurrency').value = p.currency;
+    document.getElementById('planEnabled').checked = !!p.enabled;
+    openModal('planModal');
+  }
+</script>
+
+<%- include('../partials/foot') %>

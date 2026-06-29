@@ -1,0 +1,142 @@
+<%- include('../partials/head', { title: t('clients_title') }) %>
+
+<%
+function planLabel(p){
+  var dur = p.days > 0 ? t('days_n', { n: p.days }) : t('no_expiry');
+  var tr  = p.traffic_gb > 0 ? (p.traffic_gb + ' GB') : t('unlimited');
+  return p.name + ' — ' + dur + ' · ' + tr + ' · ' + Number(p.price).toLocaleString() + ' ' + p.currency;
+}
+%>
+
+<div class="page-head">
+  <h1><%= t('clients_title') %></h1>
+  <div class="spacer"></div>
+  <% if (inbounds.length && plans.length) { %>
+    <button class="btn" onclick="openModal('newClientModal')">+ <%= t('new_client') %></button>
+  <% } %>
+</div>
+
+<% if (!inbounds.length) { %>
+  <div class="flash error"><%= t('err_no_servers_assigned') %></div>
+<% } else if (!plans.length) { %>
+  <div class="flash error"><%= t('err_no_plans') %></div>
+<% } %>
+<% if (panelErrors && panelErrors.length) { %>
+  <div class="flash error"><%= t('err_panel', { msg: panelErrors.join(', ') }) %></div>
+<% } %>
+
+<div class="card">
+  <% if (!clients.length) { %>
+    <p class="muted"><%= t('no_clients') %></p>
+  <% } else { %>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th><%= t('col_client') %></th><th><%= t('col_inbound2') %></th><th><%= t('col_usage') %></th>
+        <th><%= t('col_expiry') %></th><th><%= t('col_actions') %></th>
+      </tr></thead>
+      <tbody>
+      <% clients.forEach(function(c){
+           var pct = fmt.usagePercent(c.used, c.total);
+           var color = fmt.usageColor(pct);
+           var dleft = fmt.daysLeft(c.live_expiry);
+      %>
+        <tr>
+          <td>
+            <strong><%= c.email %></strong>
+            <% if (!c.live_enable) { %> <span class="badge red"><%= t('disabled') %></span><% } %>
+            <% if (c.error) { %> <span class="badge yellow" title="panel">!</span><% } %>
+          </td>
+          <td class="muted nowrap"><%= c.server_name %><br><span class="mono">#<%= c.inbound_id %></span></td>
+          <td>
+            <div class="usage">
+              <div class="bar"><span style="width:<%= Math.min(100,pct) %>%;background:<%= color %>"></span></div>
+              <div class="lbl">
+                <% if (c.total > 0) { %><%= t('usage_of', { used: fmt.formatBytes(c.used), total: fmt.formatBytes(c.total) }) %> · <%= pct %>%
+                <% } else { %><%= fmt.formatBytes(c.used) %> · <%= t('unlimited') %><% } %>
+              </div>
+            </div>
+          </td>
+          <td class="nowrap">
+            <% if (dleft === null) { %><span class="badge muted"><%= t('no_expiry') %></span>
+            <% } else if (dleft < 0) { %><span class="badge red"><%= t('expired') %></span>
+            <% } else { %><span class="badge <%= dleft <= 3 ? 'yellow':'green' %>"><%= t('days_left_n', { n: dleft }) %></span>
+              <div class="hint"><%= fmt.formatDate(c.live_expiry) %></div><% } %>
+          </td>
+          <td class="actions">
+            <div class="btn-group">
+              <button class="btn sm" onclick="getLinks('/reseller/clients/<%= c.server_id %>/links?email=<%= encodeURIComponent(c.email) %>&subId=<%= encodeURIComponent(c.sub_id || '') %>')"><%= t('get_link') %></button>
+              <% if (plans.length) { %>
+              <button class="btn sm ghost" onclick="openRenew(<%= c.server_id %>, '<%= c.email.replace(/'/g,"\\'") %>')"><%= t('renew') %></button>
+              <% } %>
+              <form method="post" action="/reseller/clients/<%= c.server_id %>/delete" style="margin:0" data-confirm="<%= t('confirm_delete_client') %>">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <input type="hidden" name="email" value="<%= c.email %>">
+                <button class="btn sm danger" type="submit"><%= t('delete') %></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+
+<!-- New client modal -->
+<div class="modal-back" id="newClientModal">
+  <div class="modal">
+    <div class="modal-head"><h2><%= t('new_client') %></h2><button class="close-x" onclick="closeModal('newClientModal')">×</button></div>
+    <form method="post" action="/reseller/clients">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label><%= t('select_inbound') %></label>
+      <select name="target" required>
+        <% inbounds.forEach(function(ib){ %>
+          <option value="<%= ib.server_id %>:<%= ib.inbound_id %>"><%= ib.server_name %> — <%= ib.inbound_remark || ('#'+ib.inbound_id) %> (<%= ib.inbound_protocol %>)</option>
+        <% }); %>
+      </select>
+      <label class="mt"><%= t('client_remark') %></label>
+      <input type="text" name="email" required pattern="[A-Za-z0-9._\-@]+">
+      <div class="hint"><%= t('client_remark_hint') %></div>
+      <label class="mt"><%= t('select_plan') %></label>
+      <select name="plan_id" required>
+        <% plans.forEach(function(p){ %>
+          <option value="<%= p.id %>"><%= planLabel(p) %></option>
+        <% }); %>
+      </select>
+      <div class="flex mt"><button class="btn" type="submit"><%= t('create') %></button>
+        <button class="btn ghost" type="button" onclick="closeModal('newClientModal')"><%= t('cancel') %></button></div>
+    </form>
+  </div>
+</div>
+
+<!-- Renew modal -->
+<div class="modal-back" id="renewModal">
+  <div class="modal">
+    <div class="modal-head"><h2 id="renewTitle" data-tpl="<%= t('renew_title', { email: '{email}' }) %>"><%= t('renew_client') %></h2><button class="close-x" onclick="closeModal('renewModal')">×</button></div>
+    <form method="post" id="renewForm">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <input type="hidden" name="email" id="renewEmail" value="">
+      <p class="hint"><%= t('renew_hint') %></p>
+      <label><%= t('select_plan') %></label>
+      <select name="plan_id" required>
+        <% plans.forEach(function(p){ %>
+          <option value="<%= p.id %>"><%= planLabel(p) %></option>
+        <% }); %>
+      </select>
+      <div class="flex mt"><button class="btn" type="submit"><%= t('renew') %></button>
+        <button class="btn ghost" type="button" onclick="closeModal('renewModal')"><%= t('cancel') %></button></div>
+    </form>
+  </div>
+</div>
+
+<!-- Links modal -->
+<div class="modal-back" id="linkModal">
+  <div class="modal">
+    <div class="modal-head"><h2><%= t('link_title') %></h2><button class="close-x" onclick="closeModal('linkModal')">×</button></div>
+    <div id="linkBody"></div>
+  </div>
+</div>
+
+<%- include('../partials/foot') %>

@@ -1,0 +1,75 @@
+<%- include('../partials/head', { title: t('settings_title') }) %>
+
+<div class="page-head"><h1><%= t('settings_title') %></h1></div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h2><%= t('telegram_settings') %></h2>
+    <p>
+      <span class="muted"><%= t('telegram_status') %>:</span>
+      <% if (telegramOn) { %><span class="badge green"><%= t('enabled') %></span><% } else { %><span class="badge muted"><%= t('disabled') %></span><% } %>
+    </p>
+    <p class="hint"><%= telegramOn ? t('telegram_on') : t('telegram_off') %></p>
+    <p class="hint"><%= t('telegram_hint') %></p>
+  </div>
+
+  <div class="card">
+    <h2><%= t('account_settings') %></h2>
+    <form method="post" action="/admin/settings/password">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label><%= t('current_password') %></label>
+      <input type="password" name="current_password" autocomplete="current-password" required>
+      <label><%= t('new_password') %></label>
+      <input type="password" name="new_password" autocomplete="new-password" required>
+      <label><%= t('confirm_password') %></label>
+      <input type="password" name="confirm_password" autocomplete="new-password" required>
+      <div class="mt"><button class="btn" type="submit"><%= t('admin_change_password') %></button></div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <h2>🔒 <%= t('tls_title') %></h2>
+  <p class="hint"><%= t('tls_hint') %></p>
+  <p>
+    <span class="muted"><%= t('tls_current') %>:</span>
+    <% if (scheme === 'https') { %>
+      <span class="badge green">HTTPS · <%= domain %></span>
+    <% } else { %>
+      <span class="badge muted">HTTP · <%= t('tls_on_ip') %></span>
+    <% } %>
+    <span class="muted">: <%= port %></span>
+  </p>
+
+  <form method="post" action="/admin/settings/tls" id="tlsForm">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="form-group">
+      <label for="tlsDomain"><%= t('tls_domain') %></label>
+      <input id="tlsDomain" type="text" name="site_domain" value="<%= tlsCfg.domain %>" placeholder="manage.example.com" autocomplete="off">
+      <div class="hint"><%= t('tls_domain_hint') %></div>
+    </div>
+    <div class="form-group">
+      <label for="tlsCert"><%= t('tls_cert_path') %></label>
+      <input id="tlsCert" type="text" name="tls_cert_path" value="<%= tlsCfg.certPath %>" placeholder="/root/cert/manage.example.com/fullchain.pem" autocomplete="off">
+      <div class="hint"><%= t('tls_cert_path_hint') %></div>
+    </div>
+    <div class="form-group">
+      <label for="tlsKey"><%= t('tls_key_path') %></label>
+      <input id="tlsKey" type="text" name="tls_key_path" value="<%= tlsCfg.keyPath %>" placeholder="/root/cert/manage.example.com/privkey.pem" autocomplete="off">
+      <div class="hint"><%= t('tls_key_path_hint') %></div>
+    </div>
+    <div id="tlsTestResult" class="mt"></div>
+    <div class="mt btn-group gap-sm">
+      <button class="btn ghost" type="button" onclick="testTls(this)">🧪 <%= t('tls_validate') %></button>
+      <button class="btn" type="submit">💾 <%= t('tls_save_apply') %></button>
+    </div>
+    <p class="hint mt"><%= t('tls_restart_note') %></p>
+  </form>
+</div>
+
+<div class="card">
+  <h2><%= t('app_name') %></h2>
+  <p class="hint"><%= t('env_note') %></p>
+</div>
+
+<%- include('../partials/foot') %>

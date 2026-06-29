@@ -1,0 +1,65 @@
+<%- include('../partials/head', { title: t('assign_title') }) %>
+
+<div class="page-head">
+  <a class="btn ghost sm" href="/admin/resellers">← <%= t('nav_resellers') %></a>
+  <h1><%= t('assign_for', { name: reseller.username }) %></h1>
+</div>
+<p class="subtitle"><%= t('assign_hint') %></p>
+
+<div class="card">
+  <form method="get" action="/admin/resellers/<%= reseller.id %>/assignments" class="flex flex-wrap">
+    <div style="min-width:240px">
+      <label><%= t('select_server') %></label>
+      <select name="server" onchange="this.form.submit()">
+        <% if (!servers.length) { %><option><%= t('no_servers') %></option><% } %>
+        <% servers.forEach(function(s){ %>
+          <option value="<%= s.id %>" <%= server && server.id===s.id ? 'selected':'' %>><%= s.name %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div style="align-self:flex-end">
+      <a class="btn ghost" href="/admin/resellers/<%= reseller.id %>/assignments?server=<%= server ? server.id : '' %>"><%= t('fetch_inbounds') %></a>
+    </div>
+  </form>
+</div>
+
+<% if (panelError) { %>
+  <div class="flash error"><%= t('err_panel', { msg: panelError }) %></div>
+<% } %>
+
+<% if (server) { %>
+<div class="card">
+  <h2><%= t('available_inbounds') %> — <%= server.name %></h2>
+  <% if (!inbounds.length) { %>
+    <p class="muted"><%= t('no_inbounds') %></p>
+  <% } else { %>
+  <form method="post" action="/admin/resellers/<%= reseller.id %>/assignments">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <input type="hidden" name="server_id" value="<%= server.id %>">
+    <input type="hidden" name="meta" value="<%= JSON.stringify(inbounds) %>">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:40px"></th><th><%= t('col_remark') %></th><th><%= t('col_protocol') %></th>
+          <th><%= t('col_port') %></th><th><%= t('inbound_id') %></th>
+        </tr></thead>
+        <tbody>
+        <% inbounds.forEach(function(ib){ %>
+          <tr>
+            <td><input type="checkbox" name="inbounds" value="<%= ib.id %>" <%= assignedSet.has(ib.id) ? 'checked':'' %>></td>
+            <td><strong><%= ib.remark || '—' %></strong></td>
+            <td><span class="badge muted"><%= ib.protocol %></span></td>
+            <td class="mono"><%= ib.port %></td>
+            <td class="muted">#<%= ib.id %></td>
+          </tr>
+        <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <div class="mt"><button class="btn" type="submit"><%= t('save_assignments') %></button></div>
+  </form>
+  <% } %>
+</div>
+<% } %>
+
+<%- include('../partials/foot') %>

@@ -1,0 +1,9 @@
+<%- include('partials/head', { title: String(code), active: '' }) %>
+
+<div class="card" style="max-width:480px;margin:6vh auto;text-align:center">
+  <h1 style="font-size:2.4rem;margin-bottom:6px"><%= code %></h1>
+  <p class="muted"><%= message %></p>
+  <a class="btn ghost mt" href="/"><%= t('back') %></a>
+</div>
+
+<%- include('partials/foot') %>

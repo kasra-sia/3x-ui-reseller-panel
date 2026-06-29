@@ -1,0 +1,159 @@
+<%- include('../partials/head', { title: t('billing_title'), active: 'billing' }) %>
+
+<% function statusBadge(s){ return s==='settled'?'green':(s==='cancelled'?'muted':'orange'); } %>
+<% function actionLabel(a){ return a==='create'?t('action_create'):(a==='renew'?t('action_renew'):t('action_delete')); } %>
+
+<div class="page-head">
+  <h1>≣ <%= t('billing_title') %></h1>
+  <div class="spacer"></div>
+  <div class="flex gap-sm">
+    <div class="stat" style="padding: 0 12px; border: none; box-shadow: none; background: transparent;">
+      <div class="muted" style="font-size: 0.85rem; text-transform: uppercase;">
+        💰 <%= t('total_pending') %>
+      </div>
+      <div class="n" style="font-size: 1.8rem;">
+        <%= Number(pendingTotal).toLocaleString() %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle">📋 <%= t('bill_admin_hint') %></p>
+
+<!-- Filters -->
+<div class="card">
+  <form method="get" action="/admin/billing" class="grid cols-2">
+    <div class="form-group">
+      <label for="filterReseller"><%= t('filter_reseller') %></label>
+      <select id="filterReseller" name="reseller" onchange="this.form.submit()">
+        <option value="0">👥 <%= t('all_resellers') %></option>
+        <% resellers.forEach(function(r){ %>
+          <option value="<%= r.id %>" <%= filter===r.id?'selected':'' %>>⚇ <%= r.username %></option>
+        <% }); %>
+      </select>
+    </div>
+  </form>
+</div>
+
+<!-- Billing Table -->
+<div class="card">
+  <% if (!rows.length) { %>
+    <div class="empty-state">
+      <div class="icon">📊</div>
+      <div class="title"><%= t('no_bill') %></div>
+      <div class="description"><%= t('no_billing_records') || t('no_billing_data') %></div>
+    </div>
+  <% } else { %>
+    <div style="margin-bottom: 12px; font-size: 0.9rem; color: var(--muted);">
+      📊 <%= rows.length %> <%= t('entries') %>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th><%= t('col_date') %></th>
+            <th><%= t('col_reseller') %></th>
+            <th><%= t('col_action') %></th>
+            <th><%= t('col_server') %></th>
+            <th><%= t('col_client') %></th>
+            <th><%= t('col_price') %></th>
+            <th><%= t('col_status') %></th>
+            <th style="text-align: center;"><%= t('col_actions') %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function(b){ %>
+            <tr>
+              <td class="muted nowrap" style="font-size: 0.9rem;">
+                📅 <%= fmt.formatDateTime(b.created_at) %>
+              </td>
+              <td>
+                <strong>⚇ <%= b.reseller_name %></strong>
+              </td>
+              <td>
+                <span class="badge muted">
+                  <%= actionLabel(b.action) %>
+                </span>
+              </td>
+              <td class="muted nowrap" style="font-size: 0.85rem;">
+                <%= b.server_name || '—' %> <code>#<%= b.inbound_id %></code>
+              </td>
+              <td>
+                <code style="font-size: 0.85rem;"><%= b.client_email %></code>
+              </td>
+              <td class="nowrap">
+                <strong><%= b.price %></strong>
+                <span class="muted" style="font-size: 0.85rem;">
+                  <%= b.currency %>
+                </span>
+              </td>
+              <td>
+                <span class="badge <%= statusBadge(b.status) %>">
+                  <% if (b.status === 'settled') { %>✓<% } else if (b.status === 'cancelled') { %>✕<% } else { %>◐<% } %>
+                  <%= t('status_'+b.status) %>
+                </span>
+              </td>
+              <td class="actions" style="text-align: center;">
+                <div class="btn-group gap-sm" style="justify-content: center; flex-wrap: wrap;">
+                  <% if (b.status !== 'settled') { %>
+                  <form method="post" action="/admin/billing/<%= b.id %>/status" style="margin:0; display: inline;">
+                    <input type="hidden" name="_csrf" value="<%= csrf %>">
+                    <input type="hidden" name="status" value="settled">
+                    <button class="btn sm success" type="submit" title="<%= t('mark_settled') %>">
+                      ✓ <%= t('settle') || t('mark_settled') %>
+                    </button>
+                  </form>
+                  <% } %>
+                  <% if (b.status === 'pending') { %>
+                  <form method="post" action="/admin/billing/<%= b.id %>/status" style="margin:0; display: inline;">
+                    <input type="hidden" name="_csrf" value="<%= csrf %>">
+                    <input type="hidden" name="status" value="cancelled">
+                    <button class="btn sm ghost" type="submit" title="<%= t('mark_cancelled') %>">
+                      ✕ <%= t('cancel') || t('mark_cancelled') %>
+                    </button>
+                  </form>
+                  <% } %>
+                  <form method="post" action="/admin/billing/<%= b.id %>/delete" style="margin:0; display: inline;" data-confirm="<%= t('confirm_delete_bill') %>">
+                    <input type="hidden" name="_csrf" value="<%= csrf %>">
+                    <button class="btn sm danger" type="submit" title="<%= t('delete') %>">
+                      🗑️ <%= t('delete') %>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<div class="card">
+  <h2><%= t('deletion_log') %></h2>
+  <p class="subtitle" style="margin-top:-6px"><%= t('deletion_log_hint') %></p>
+  <% if (!activity || !activity.length) { %>
+    <p class="muted"><%= t('no_deletions') %></p>
+  <% } else { %>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th><%= t('col_date') %></th><th><%= t('deleted_by') %></th><th><%= t('col_server') %></th><th><%= t('col_client') %></th>
+      </tr></thead>
+      <tbody>
+      <% activity.forEach(function(a){ %>
+        <tr>
+          <td class="muted nowrap"><%= fmt.formatDateTime(a.created_at) %></td>
+          <td><%= a.reseller_name || '—' %></td>
+          <td class="muted"><%= a.server_name || '—' %></td>
+          <td class="mono"><%= a.client_email %></td>
+        </tr>
+      <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+
+<%- include('../partials/foot') %>

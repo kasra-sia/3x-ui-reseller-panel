@@ -1,0 +1,36 @@
+# Secrets & local config
+.env
+
+# Dependencies
+node_modules/
+
+# SQLite database (local app data)
+data/
+*.sqlite
+*.sqlite3
+*.db
+
+# TLS certificates (operator provides these on the server)
+cert/*
+!cert/.gitkeep
+
+# Logs / OS noise
+*.log
+.DS_Store
+npm-debug.log*
+
+# --- Added when initializing the local working copy ---
+# Env backups contain real secrets; keep only the template
+.env.*
+!.env.example
+
+# DB backups + SQLite sidecar files
+data.bak/
+*.sqlite-shm
+*.sqlite-wal
+
+# Claude Code session directory
+.claude/
+
+# macOS AppleDouble metadata
+._*

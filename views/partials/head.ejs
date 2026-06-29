@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>" dir="<%= dir %>" data-theme="<%= typeof theme !== 'undefined' ? theme : 'dark' %>">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf" content="<%= csrf %>">
+  <title><%= (typeof title !== 'undefined' ? title + ' · ' : '') + appName %></title>
+  <% if (lang === 'fa') { %>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+  <% } %>
+  <link rel="stylesheet" href="/public/css/style.css?v=<%= typeof assetVer !== 'undefined' ? assetVer : '1' %>">
+</head>
+<body>
+  <span id="i18n"
+    data-copied="<%= t('copied') %>" data-loading="<%= t('loading') %>" data-error="<%= t('error') %>"
+    data-copy="<%= t('copy') %>" data-subscription_link="<%= t('subscription_link') %>"
+    data-direct_link="<%= t('direct_link') %>" data-no_links="<%= t('no_links') %>"
+    data-no_sublink_hint="<%= t('no_sublink_hint') %>"></span>
+
+  <div class="topbar">
+    <div class="brand"><%= appName.split(' ')[0] %><span class="dot">.</span> <span class="muted" style="font-weight:400;font-size:.85rem"><%= appName.split(' ').slice(1).join(' ') %></span></div>
+    <div class="spacer"></div>
+    <button class="icon-btn" type="button" id="themeBtn" onclick="toggleTheme()" title="dark / light" aria-label="theme"><%= (typeof theme !== 'undefined' ? theme : 'dark') === 'dark' ? '☀️' : '🌙' %></button>
+    <a class="lang-toggle" href="/lang/<%= lang === 'fa' ? 'en' : 'fa' %>"><%= t('switch_lang') %></a>
+    <% if (user) { %>
+      <span class="who"><%= user.username %></span>
+      <span class="role-chip"><%= user.role === 'admin' ? t('role_admin') : t('role_reseller') %></span>
+      <form method="post" action="/logout" style="margin:0">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <button class="btn ghost sm" type="submit"><%= t('logout') %></button>
+      </form>
+    <% } %>
+  </div>
+
+  <div class="layout">
+    <% if (user) { %>
+    <nav class="sidebar">
+      <% const A = (typeof active !== 'undefined') ? active : ''; %>
+      <% if (user.role === 'admin') { %>
+        <a href="/admin" class="<%= A==='overview'?'active':'' %>"><span class="ic">▣</span><%= t('nav_overview') %></a>
+        <a href="/admin/resellers" class="<%= A==='resellers'?'active':'' %>"><span class="ic">⚇</span><%= t('nav_resellers') %></a>
+        <a href="/admin/servers" class="<%= A==='servers'?'active':'' %>"><span class="ic">⛁</span><%= t('nav_servers') %></a>
+        <a href="/admin/clients" class="<%= A==='clients'?'active':'' %>"><span class="ic">☰</span><%= t('nav_clients') %></a>
+        <a href="/admin/billing" class="<%= A==='billing'?'active':'' %>"><span class="ic">≣</span><%= t('nav_billing') %></a>
+        <a href="/admin/settings" class="<%= A==='settings'?'active':'' %>"><span class="ic">⚙</span><%= t('nav_settings') %></a>
+      <% } else { %>
+        <a href="/reseller/clients" class="<%= A==='clients'?'active':'' %>"><span class="ic">☰</span><%= t('nav_clients') %></a>
+        <a href="/reseller/billing" class="<%= A==='billing'?'active':'' %>"><span class="ic">≣</span><%= t('nav_billing') %></a>
+      <% } %>
+    </nav>
+    <% } %>
+
+    <main class="container">
+      <%- include('flash') %>

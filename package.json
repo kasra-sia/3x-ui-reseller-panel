@@ -1,0 +1,26 @@
+{
+  "name": "3xui-reseller-panel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lightweight reseller sub-panel in front of a 3x-ui panel (Admin delegates limited inbound access to Resellers).",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "init-db": "node scripts/init-db.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-session": "^2.1.0",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "qrcode": "^1.5.4"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^12.11.1"
+  }
+}

@@ -1,0 +1,96 @@
+<%- include('../partials/head', { title: t('overview_title'), active: 'overview' }) %>
+
+<div class="page-head">
+  <h1>📊 <%= t('overview_title') %></h1>
+  <div class="spacer"></div>
+  <small class="muted"><%= new Date().toLocaleDateString(lang === 'fa' ? 'fa-IR' : 'en-US') %></small>
+</div>
+
+<!-- Quick Stats -->
+<div class="grid cols-4">
+  <a class="stat" href="/admin/resellers" title="<%= t('nav_resellers') %>">
+    <div class="n"><%= stats.resellers %></div>
+    <div class="l">⚇ <%= t('stat_resellers') %></div>
+    <div class="desc"><%= t('manage_resellers') || t('stat_resellers') %></div>
+  </a>
+
+  <a class="stat" href="/admin/servers" title="<%= t('nav_servers') %>">
+    <div class="n"><%= stats.servers %></div>
+    <div class="l">⛁ <%= t('stat_servers') %></div>
+    <div class="desc"><%= t('manage_servers') || t('stat_servers') %></div>
+  </a>
+
+  <a class="stat" href="/admin/clients" title="<%= t('nav_clients') %>">
+    <div class="n"><%= stats.clients %></div>
+    <div class="l">☰ <%= t('stat_clients') %></div>
+    <div class="desc"><%= t('view_all_clients') || t('stat_clients') %></div>
+  </a>
+
+  <a class="stat" href="/admin/billing" title="<%= t('nav_billing') %>">
+    <div class="n"><%= Number(stats.pending).toLocaleString() %></div>
+    <div class="l">≣ <%= t('stat_pending_bill') %></div>
+    <div class="desc"><%= t('view_billing') || t('stat_pending_bill') %></div>
+  </a>
+</div>
+
+<!-- System Info Card -->
+<div class="card mt-2">
+  <div class="flex-between">
+    <div>
+      <h2>🔧 <%= t('app_name') %></h2>
+      <p class="muted"><%= t('env_note') %></p>
+    </div>
+    <div class="flex gap-sm">
+      <a href="/admin/settings" class="btn ghost sm">
+        <%= t('nav_settings') %>
+      </a>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="grid cols-3">
+    <div>
+      <div class="muted" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+        <%= t('status') %>
+      </div>
+      <div>
+        <span class="badge green">● <%= t('online') || 'Online' %></span>
+      </div>
+    </div>
+    <div>
+      <div class="muted" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+        <%= t('language') %>
+      </div>
+      <div>
+        <span class="badge blue"><%= lang === 'fa' ? '🇮🇷 فارسی' : '🇺🇸 English' %></span>
+      </div>
+    </div>
+    <div>
+      <div class="muted" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+        <%= t('version') %>
+      </div>
+      <div>
+        <span class="badge muted">v1.0.0</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mt-2">
+  <h3>⚡ <%= t('quick_actions') || 'Quick Actions' %></h3>
+  <div class="flex-wrap gap-md" style="margin-top: 14px;">
+    <a href="/admin/resellers" class="btn secondary sm">
+      <%= t('new_reseller') || t('add') %>
+    </a>
+    <a href="/admin/servers" class="btn secondary sm">
+      <%= t('new_server') || t('add_server') %>
+    </a>
+    <a href="/admin/settings" class="btn secondary sm">
+      <%= t('configure_settings') || t('settings') %>
+    </a>
+  </div>
+</div>
+
+<%- include('../partials/foot') %>
